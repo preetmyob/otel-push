@@ -14,24 +14,17 @@
 // limitations under the License.
 // </copyright>
 
-// using System.Diagnostics;
-
-using System.Diagnostics;
 using OpenTelemetry;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
 namespace sample;
 
-
 public abstract class Program
 {
     private static string serviceName = "MyServiceName";
     private static string serviceVersion = "1.0.0";
-
-    private static readonly ActivitySource MyActivitySource = new(
-        "MyCompany.MyProduct.MyLibrary");
-
+    
     private static Tracer? _tracer;
     private static TracerProvider? _tracerProvider;
 
