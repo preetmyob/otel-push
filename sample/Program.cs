@@ -14,30 +14,63 @@
 // limitations under the License.
 // </copyright>
 
+// using System.Diagnostics;
+
 using System.Diagnostics;
 using OpenTelemetry;
+using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 
-namespace GettingStarted;
+namespace sample;
 
-public class Program
+
+public abstract class Program
 {
+    private static string serviceName = "MyServiceName";
+    private static string serviceVersion = "1.0.0";
+
     private static readonly ActivitySource MyActivitySource = new(
         "MyCompany.MyProduct.MyLibrary");
 
+    private static Tracer? _tracer;
+    private static TracerProvider? _tracerProvider;
+
     public static void Main()
     {
-        using var tracerProvider = Sdk.CreateTracerProviderBuilder()
-            .AddSource("MyCompany.MyProduct.MyLibrary")
+        _tracerProvider = Sdk.CreateTracerProviderBuilder()
+            .AddSource(serviceName)
+            .SetResourceBuilder(
+                ResourceBuilder.CreateDefault()
+                    .AddService(serviceName: serviceName, serviceVersion: serviceVersion))
             .AddConsoleExporter()
             .Build();
 
-        using (var activity = MyActivitySource.StartActivity("SayHello"))
+        _tracer = _tracerProvider!.GetTracer(serviceName, serviceVersion);
+        using var span = _tracer.StartActiveSpan("Outer scope");
+   
+        span.AddEvent("Starting");
+        span.AddEvent("Important middle stuff");
+        span.AddEvent("Finishing");
+        try
         {
-            activity?.SetTag("foo", 1);
-            activity?.SetTag("bar", "Hello, World!");
-            activity?.SetTag("baz", new int[] { 1, 2, 3 });
-            activity?.SetStatus(ActivityStatusCode.Ok);
+            using var innerSpan = _tracer.StartActiveSpan(name: "Inner scope");
+            innerSpan.SetAttribute("Some data", 999);
+            DoStuffOverThere();
         }
+        catch (Exception ex)
+        {
+            span.SetAttribute("foo", 1);
+            span.SetAttribute("bar", "Hello, World!");
+            span.SetAttribute("baz", new int[] { 1, 2, 3 });
+            span.SetStatus(Status.Ok);
+            span.RecordException(ex);
+        }
+    }
+
+    private static void DoStuffOverThere()
+    {
+        Tracer.CurrentSpan.AddEvent("Doing some micro stuff over there");
+        
+        throw new NotImplementedException("OI!!!!");
     }
 }
