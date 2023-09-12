@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;
+using OpenTelemetry.Logs;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
 using Serilog;
@@ -72,9 +73,10 @@ public abstract class Program
         services.AddLogging(loggingBuilder =>
             loggingBuilder
                 .AddSerilog(dispose: true)
-                .AddConsole()
-                .AddSimpleConsole(options =>
-                    options.IncludeScopes = true)
+                .AddOpenTelemetry(options =>
+                    options
+                        .AddConsoleExporter()
+                        .IncludeScopes = true)
                 .Configure(options => 
                     options
                         .ActivityTrackingOptions = ActivityTrackingOptions.SpanId
